@@ -1,361 +1,361 @@
-import React, { Component } from 'react';
-import { Grid, FormControl } from '@material-ui/core';
-import { withStyles } from '@material-ui/core/styles';
+import React, {Component} from 'react';
+import './Home.css';
+import Header from '../../common/header/Header';
 import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import IconButton from '@material-ui/core/IconButton';
 import CardHeader from '@material-ui/core/CardHeader';
+import CardMedia from '@material-ui/core/CardMedia';
 import CardContent from '@material-ui/core/CardContent';
 import Avatar from '@material-ui/core/Avatar';
-import Header from '../../common/header/Header';
-import profileImage from "../../assets/upgrad.svg"
-import FavoriteBorderIcon from '@material-ui/icons/FavoriteBorder';
-import IconButton from '@material-ui/core/IconButton'
-import FavoriteIcon from '@material-ui/icons/Favorite';
-import Input from '@material-ui/core/Input'
-import InputLabel from '@material-ui/core/InputLabel';
-import Button from '@material-ui/core/Button';
+import {withStyles} from '@material-ui/core/styles';
+import FavoriteIconBorder from '@material-ui/icons/FavoriteBorder';
+import FormControl from '@material-ui/core/FormControl';
+import FavoriteIconFill from '@material-ui/icons/Favorite';
 import Typography from '@material-ui/core/Typography';
-import { Redirect } from 'react-router-dom'
+import InputLabel from '@material-ui/core/InputLabel';
+import Input from '@material-ui/core/Input';
+import Button from '@material-ui/core/Button';
+import GridList from '@material-ui/core/GridList';
+import GridListTile from '@material-ui/core/GridListTile';
+import profileImage from "../../assets/upgrad.svg"
+import Config from '../../common/config';
 
-import "./Home.css";
+const styles =  theme => ({
+  card: {
+    maxWidth: 1100,
+  },
+  avatar: {
+    margin: 10,
+  },
+  media: {
+    height:0,
+    paddingTop: '56.25%',
+  },
+  formControl: {
+    display:'flex',
+    flexDirection:'row',
+    justifyContent:'space-between',
+    alignItems:'baseline',
+  },
+  comment:{
+    display:'flex',
+    alignItems:'center',
+  },
+  hr:{
+    marginTop:'10px',
+    borderTop:'2px solid #f2f2f2'
+  },
+  gridList:{
+    width: 1100,
+    height: 'auto',
+    overflowY: 'auto',
+  },
+  grid:{
+    display:'flex',
+    justifyContent:'center',
+    alignItems:'center',
+    marginTop:90
+  }
+});
 
-// Custom Styles to over ride material ui default styles
-const styles = (theme => ({
-    root: { //style for the root 
-        flexGrow: 1,
-        backgroundColor: theme.palette.background.paper
-    },
-    grid: { //style for the grid component 
-        padding: "20px",
-        "margin-left": "10%",
-        "margin-right": "10%",
-    },
-    card: { //style for the card component 
-        maxWidth: "100%",
-    },
-    media: { // style for the image in the card
-        height: "56.25%",
-        width: "100%",
-        // paddingTop: '56.25%', // 16:9
-    },
-    avatar: { //style for the avatar in the card header 
+class Home extends Component{
 
-        margin: 10,
-        width: 60,
-        height: 60,
-    },
-    title: { //Style for the title of the card 
-        'font-weight': '600',
-    },
+  constructor(props) {
+    super(props);
+    if (sessionStorage.getItem('access-token') == null) {
+      props.history.replace('/');
+    }
+    this.state = {
+      data: [],
+      filteredData:[],
+      userData:{},
+      likeSet:new Set(),
+      comments:{},
+      currrentComment:""
+    }
+  }
 
-    addCommentBtn: { // ADD button styling 
-        "margin-left": "15px",
-    },
+  componentDidMount(){
+    this.getMediaInfo();
+  }
 
-    comment: { //for the form control
-        "flex-direction": "row",
-        "margin-top": "25px",
-        "align-items": "baseline",
-        "justify-content": "center",
-    },
+  render(){
+    const{classes} = this.props;
+    return(
+      <div>
+        <Header
+          userProfileUrl={profileImage}
+          screen={"Home"}
+          searchHandler={this.onSearchEntered}
+          handleLogout={this.logout}
+          handleAccount={this.navigateToAccount}/>
+        <div className={classes.grid}>
+          <GridList className={classes.gridList} cellHeight={'auto'}>
+            {this.state.filteredData.map(item => (
+              <GridListTile key={item.id}>
+                <HomeItem
+                  classes={classes}
+                  item={item}
+                  onLikedClicked={this.likeClickHandler}
+                  onAddCommentClicked={this.addCommentClickHandler}
+                  commentChangeHandler={this.commentChangeHandler}
+                  comments={this.state.comments}/>
+              </GridListTile>
+            ))}
+          </GridList>
+        </div>
+      </div>
+    );
+  }
 
-    commentUsername: {  //style for the userName of the comment
-        fontSize: "inherit"
+  onSearchEntered = (value) =>{
+    console.log('search value', value);
+    let filteredData = this.state.data;
+    filteredData = filteredData.filter((data) =>{
+      let string = data.caption.toLowerCase();
+      let subString = value.toLowerCase();
+      return string.includes(subString);
+    })
+    this.setState({
+      filteredData
+    })
+  }
+
+  likeClickHandler = (id) =>{
+    var foundItem = this.state.data.find((item) => {
+      return item.id === id;
+    })
+    if (typeof foundItem !== undefined) {
+      if (!this.state.likeSet.has(id)) {
+        foundItem.likes_count++;
+        this.setState(({likeSet}) => ({
+          likeSet:new Set(likeSet.add(id))
+        }))
+
+      }else {
+        foundItem.likes_count--;
+        this.setState(({likeSet}) =>{
+          const newLike = new Set(likeSet);
+          newLike.delete(id);
+
+          return {
+            likeSet:newLike
+          };
+        });
+      }
+    }
+  }
+
+  addCommentClickHandler = (id)=>{
+    if (this.state.currentComment === "" || typeof this.state.currentComment === undefined) {
+      return;
     }
 
-}));
+    let commentList = this.state.comments.hasOwnProperty(id)?
+      this.state.comments[id].concat(this.state.currentComment): [].concat(this.state.currentComment);
 
-// Creating Home class component to render the home page as per the design
-class Home extends Component {
+    this.setState({
+      comments:{
+        ...this.state.comments,
+        [id]:commentList
+      },
+      currentComment:''
+    })
+    sessionStorage.setItem(id+'comment',JSON.stringify([...commentList]));
+  }
 
 
-    constructor() {
-        super()
-        this.state = {
-            images: [],
-            comments: [],
-            profile_picture: "",
-            userName: "",
-            commentText: "",
-            searchOn: false,
-            originalImageArr: {},
-            isLoggedIn: sessionStorage.getItem("access-token") == null ? false : true,
-            accessToken: sessionStorage.getItem("access-token"),
-            count: 1,
-        };
-    }
-    // As per the warning UNSAFE_ is prefixed before componentWillMount method
-    // In this method all the api will be called before the component is show,
-    // the rendering will occur once all the initial state are set
-    UNSAFE_componentWillMount() {
-        // Get data from first API endpoint
-        //This is called to get the profile details of the user such as username and profile_picture
-        //API calls are made only when the user is Logged in
-        let that = this;
-        if (this.state.isLoggedIn) {
-            let data = null;
-            let xhr = new XMLHttpRequest();
-            xhr.addEventListener("readystatechange", function () {
-                if (this.readyState === 4) {
-                    that.setState({
-                        //Profile picture obtained from the API is stored in profile_picture & username in userName
-                        profile_picture: JSON.parse(this.responseText).data.profile_picture,
-                        userName: JSON.parse(this.responseText).data.username
+  commentChangeHandler = (e) => {
+    this.setState({
+      currentComment:e.target.value
+    });
+  }
 
-                    });
-                };
+  getMediaInfo =  () => {
+    let that = this;
+    let url = `${Config.api.mediaUrl}&access_token=${sessionStorage.getItem('access-token')}`;    
+	//Calling first API
+    return fetch(url,{
+      method:'GET',
+    }).then((response) =>{
+        console.log(response);
+		return response.json();
+    }).then((jsonResponse) =>{
+      const mediaArray = jsonResponse.data;
+      const mediaInfo = []
+      //Calling second API with all the media Ids returned from First API call
+	  console.log(mediaArray);
+    return  Promise.all(
+          mediaArray.map(x => {
+            return new Promise((resolve) => {
+              let url = `https://graph.instagram.com/${x.id}?fields=id,media_type,media_url,username,timestamp&access_token=${sessionStorage.getItem('access-token')}`;
+              console.log(url);
+			  fetch(url,{
+                method:'GET',
+              })
+                  .then(response => {
+                    return new Promise(() => {                      
+					  response.json()
+                          .then(media => {
+                            mediaInfo.push(media)
+                            resolve()
+                          })
+                    })
+                  })
+            })
+          })
+      )
+          .then(() => {
+            mediaInfo.forEach(media=>{
+              const m = mediaArray.filter(x=>x.id===media.id);
+              media['caption'] = m[0].caption;
+              media['likes_count'] =2; // Hard coding the number of likes
+              //Extracting the hashtags
+              let regex = /#(\w+)/g;
+              media['hashtags'] =  media.caption.match(regex);
+              media['hashtags'] =   media['hashtags']?media['hashtags'].join(' ') : ''
+              media.caption  = media.caption.replace(/#([^\s]*)/gm, '');
+            })
+            that.setState({
+              data:mediaInfo,
+              filteredData:mediaInfo
             });
-            xhr.open("GET", this.props.baseUrl + "?access_token=" + that.state.accessToken);
-            xhr.send(data);
-        }
+          })
 
-        // Get data from second api all the images
-        // This api is called to get all the images data posted by the user
-        // This data will maintained in state as an array and the same of the array is images
-        //API calls are made only when the user is Logged in
-        if (this.state.isLoggedIn) {
-            let xhrImages = new XMLHttpRequest();
-            xhrImages.addEventListener("readystatechange", function () {
-                if (this.readyState === 4) {
+    }).catch((error) => {
+    });
+  }
 
-                    let imageArr = JSON.parse(this.responseText).data
-                    //As the created_time are in milliseconds it would be  converted as per the required format 
-                    imageArr.forEach(element => {
-                        var date = parseInt(element.created_time, 10);
-                        date = new Date(date * 1000);
-                        //changing the format to Locale String  
-                        element.created_time = date.toLocaleString()
+  logout = () => {
+    sessionStorage.clear();
+    this.props.history.replace('/');
+  }
 
-                    });
-                    //loadHomePage method called to set the state of the images and render the page
-                    that.loadHomePage(imageArr);
+  navigateToAccount = () =>{
+    this.props.history.push('/profile');
+  }
+}
 
-                }
-            })
-            xhrImages.open("GET", this.props.baseUrl + "media/recent?access_token="+ that.state.accessToken);
-            xhrImages.send();
-        }
+class HomeItem extends Component{
+  constructor(){
+    super();
+    this.state = {
+      isLiked : false,
+      comment:'',
     }
+  }
 
-    //This method takes the image array as sets it to the state images array triggering rerender
-    loadHomePage = (imageArr) => {
-        this.setState({
-            ...this.state,
-            images: imageArr
-        });
-    }
+  render(){
+    const {classes, item, comments} = this.props;
+//timestamo conversion
+    let createdTime = new Date(item.timestamp);
+    let yyyy = createdTime.getFullYear();
+    let mm = createdTime.getMonth() + 1 ;
+    mm = mm>=10?mm:'0'+mm;
+    let dd = createdTime.getDate() >=10 ?createdTime.getDate() : '0'+ createdTime.getDate() ;
+    let HH = createdTime.getHours() >=10 ?createdTime.getHours() : '0'+createdTime.getHours() ;
+    let MM = createdTime.getMinutes()>=10?createdTime.getMinutes() : '0'+createdTime.getMinutes();
+    let ss = createdTime.getSeconds()>=10?createdTime.getSeconds() : '0'+createdTime.getSeconds();
+    let time = dd+"/"+mm+"/"+yyyy+" "+HH+":"+MM+":"+ss;
 
-    //Method used to handle changes in the comment input text
-    //This method takes the imageId as one parameter which is added to comment object and then updates the commentText state  
-    //ImageId is given so that the comment input line of active card only shows the input text given.  
-    onCommentTextChangeHandler = (event, imageId) => {
-        var comment = {
-            id: imageId,
-            text: event.target.value,
-        }
-        this.setState({
-            ...this.state,
-            commentText: comment,
-        });
-    }
 
-    //This method is to handle the ADD button beside the comment text box 
-    // This Method takes imageId so that comment is added/shown to the image it was added to 
-    //Count is to keep key unique for every comment added
-    //username is to keep the username if the user commented
-    //Comments are stored in the comment array controlled by state 
-    //Once the comment is pushed to the state comment array commentText is made empty so that comment input box returns to empty line
-    onClickAddBtn = (imageId) => {
-        var count = this.state.count
-        var comment = {
-            id: count,
-            imageId: imageId,
-            username: this.state.userName,
-            text: this.state.commentText.text,
-        }
-        count++;
-        var comments = [...this.state.comments, comment];
-        this.setState({
-            ...this.state,
-            count: count,
-            comments: comments,
-            commentText: "",
-        })
-    }
-
-    // This Handles when the like button is clicked.
-    //The like button is favorite icon 
-    // when the like button is clicked the corresponding imageId is passed,
-    //which is iterated over a loop to find the images and the boolean value of user_has_liked is changed to false
-    //The likes count is either increased or decreased based on the previous state of user_has_liked
-    likeBtnHandler = (imageId) => {
-        var i = 0
-        var imageArray = this.state.images
-        for (i; i < imageArray.length; i++) {
-            if (imageArray[i].id === imageId) {
-                if (imageArray[i].user_has_liked === true) { // check to see if user has already liked
-                    imageArray[i].user_has_liked = false; // changing the status os user_has_liked
-                    imageArray[i].likes.count--; // Changing the count of the likes
-                    this.setState({
-                        images: imageArray
-                    });
-                    break;
-                } else {
-                    imageArray[i].user_has_liked = true;  // changing the status os user_has_liked
-                    imageArray[i].likes.count++; // Changing the count of the likes
-                    this.setState({
-                        images: imageArray
-                    });
-                    break;
-
-                }
+    return(
+      <div className="home-item-main-container">
+        <Card className={classes.card}>
+          <CardHeader
+            avatar={
+              <Avatar alt="User Profile Pic" src={profileImage} className={classes.avatar}/>
             }
-
-
-        }
-    };
-    //This method is called from the header,this is passed as a props to the header
-    //Method handles when search input is changed
-    //The method takes the keyword checks with the caption and the images is updated with caption matching with keyword, 
-    //thus triggering render and only showing those images
-    //The method maintains the original data in the controlled state using originalImageArr until the searchON is true 
-    //Once the search is complete or search input value is ""then the images is set to originalImageArr rendering back to original state  
-    onSearchTextChange = (keyword) => {
-        if (!(keyword === "")) {//check if search input value is empty
-            var originalImageArr = [];
-            //First search the originalImageArr is set to images following it is set to itself so that data is not lost.
-            this.state.searchOn ? originalImageArr = this.state.originalImageArr : originalImageArr = this.state.images;
-            var updatedImageArr = [];
-            var searchOn = true;                            // changing the searchOn to true until it is keyword is null
-            keyword = keyword.toLowerCase();                //changing to lower case for comparison
-            originalImageArr.forEach((element) => {
-                var caption = element.caption.text.split("\n")[0];          // extracting the caption
-                caption.toLowerCase();                                         // changing to lower case
-                if (caption.includes(keyword)) {                        //checking if keyword is substring of caption 
-                    updatedImageArr.push(element);                      //if yes adding to the updatedImageArr 
-                }
-            })
-            if (!this.state.searchOn) {                        // For the first search
-                this.setState({
-                    ...this.state,
-                    searchOn: searchOn,
-                    images: updatedImageArr,
-                    originalImageArr: originalImageArr,
-
-                })
-            } else {
-                this.setState({                 //Until keyword is null
-                    ...this.state,
-                    images: updatedImageArr
-                })
-            }
-        } else {                     //If keyword is null then search is not On and corresponding changes are done
-            searchOn = false
-            this.setState({
-                ...this.state,
-                searchOn: searchOn,
-                images: this.state.originalImageArr,
-                originalImageArr: [],
-            })
-
-        }
-    }
-
-    render() {
-        // Styles are stored in the const classes
-        const { classes } = this.props;
-        return (
-            <div>
-                {/* Rending the Header and passing three parameter profile_picture,showSearchBox & showProfileIcon based on the value it is shown in the header */}
-                <Header  profile_picture={this.state.profile_picture}  showSearchBox={this.state.isLoggedIn ? true : false} showProfileIcon={this.state.isLoggedIn ? true : false} onSearchTextChange={this.onSearchTextChange} showMyAccount = {true} />
-                {this.state.isLoggedIn === true ?    //checking isLoggedIn is true only then the images are shown
-                    <div className="flex-container">
-                        <Grid container spacing={3} wrap="wrap" alignContent="center" className={classes.grid}>
-                            {this.state.images.map(image => (           //Iteration over images array and rendering each element of array as per the design.
-                                // components are data to the components are given as per the design and guidelines given
-                                //Grid Used to create two coloumns
-                                //Card used to show the images in two columns
-                                //Card Header to set the header of the card
-                                //Card Content to set the card content
-                                <Grid key={image.id} item xs={12} sm={6} className="grid-item">
-                                    <Card className={classes.card}>
-                                        <CardHeader
-                                            classes={{
-                                                title: classes.title,
-                                            }}
-                                            avatar={
-                                                <Avatar src={image.caption.from.profile_picture} className={classes.avatar}></Avatar>
-                                            }
-                                            title={image.caption.from.username}
-                                            subheader={image.created_time}
-                                            className={classes.cardheader}
-                                        />
-
-                                        <CardContent>
-                                            <img src={image.images.standard_resolution.url} alt={profileImage} className={classes.media} />
-                                            <div className="horizontal-rule"></div>
-                                            <div className="image-caption">
-                                                {image.caption.text.split("\n")[0]}
-                                            </div>
-                                            <div className="image-hashtags">
-                                                {image.caption.text.split("\n")[1]}
-                                            </div>
-                                            <div>
-                                                <IconButton className="like-button" aria-label="like-button" onClick={() => this.likeBtnHandler(image.id)}>
-                                                    {/* Based on the condition of the icon will be filled red or only the border */}
-                                                    {image.user_has_liked ? <FavoriteIcon className="image-liked-icon" fontSize="large" /> : <FavoriteBorderIcon className="image-like-icon" fontSize="large" />}
-                                                </IconButton>
-                                                {/* if like count is 1 it will show like or else likes */}
-                                                {image.likes.count === 1 ?
-                                                    <span>
-                                                        {image.likes.count} like
-                                                </span>
-                                                    : <span>
-                                                        {image.likes.count} likes
-                                                </span>
-                                                }
-                                            </div>
-                                            {this.state.comments.map(comment => (         //Iterating over comment array to show the comment to the corresponding image only
-
-                                                image.id === comment.imageId ?  //check if comment.imageId and imageId is same only the append the comment
-                                                    <div className="comment-display" key={comment.id}>
-                                                        <Typography variant="subtitle2" className={classes.commentUsername} gutterbottom="true" >
-                                                            {comment.username}:
-                                                        </Typography>
-                                                        <Typography variant="body1" className="comment-text" gutterbottom="true">
-                                                            {comment.text}
-                                                        </Typography>
-                                                    </div>
-                                                    : ""
-
-                                            ))}
-                                            {/* Input to add comment consist of Input ,InputLabel and ADD button */}
-                                            <FormControl className={classes.comment} fullWidth={true}>
-                                                <InputLabel htmlFor="comment" >Add a comment</InputLabel>
-                                                <Input id="comment" className="comment-text" name="commentText" onChange={(event) => this.onCommentTextChangeHandler(event, image.id)} value={image.id === this.state.commentText.id ? this.state.commentText.text : ""} />
-                                                <Button variant="contained" color="primary" className={classes.addCommentBtn} onClick={() => this.onClickAddBtn(image.id)}>
-                                                    ADD
-                                            </Button>
-                                            </FormControl>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-                            ))}
-                        </Grid>
-
-
-                    </div>
-                    : <Redirect to="/" /> //If the user is not logged in then redirecting to login page
-                }
-
+            title={item.username}
+            subheader={time}
+          />
+          <CardContent>
+            <CardMedia
+              className={classes.media}
+              image={item.media_url}
+              title={item.caption}
+            />
+            <div  className={classes.hr}>
+              <Typography component="p">
+                {item.caption}
+              </Typography>
+              <Typography style={{color:'#4dabf5'}} component="p" >
+                {item.hashtags}
+              </Typography>
             </div>
+          </CardContent>
 
+            <CardActions>
+              <IconButton aria-label="Add to favorites" onClick={this.onLikeClicked.bind(this,item.id)}>
+                {this.state.isLiked && <FavoriteIconFill style={{color:'#F44336'}}/>}
+                {!this.state.isLiked && <FavoriteIconBorder/>}
+              </IconButton>
+              <Typography component="p">
+                {item.likes_count} Likes
+              </Typography>
+            </CardActions>
 
-        )
+            <CardContent>
+            {comments.hasOwnProperty(item.id) && comments[item.id].map((comment, index)=>{
+              return(
+                <div key={index} className="row">
+                  <Typography component="p" style={{fontWeight:'bold' }} >
+                    {sessionStorage.getItem('username')}:
+                  </Typography>
+                  <Typography component="p" style={{marginLeft:'4px' }} >
+                    {comment}
+                  </Typography>
+                </div>
+              )
+            })}
+            <div className={classes.formControl}>
+              <FormControl style={{flexGrow:1}}>
+                <InputLabel htmlFor="comment">Add Comment</InputLabel>
+                <Input id="comment" value={this.state.comment} onChange={this.commentChangeHandler}/>
+              </FormControl>
+              <FormControl>
+                <Button style={{marginLeft:'1rem' }} onClick={this.onAddCommentClicked.bind(this,item.id)}
+                   variant="contained" color="primary">
+                  ADD
+                </Button>
+              </FormControl>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
-
+  onLikeClicked = (id) => {
+    if (this.state.isLiked) {
+      this.setState({
+        isLiked:false
+      });
+    }else {
+      this.setState({
+        isLiked:true
+      });
     }
+    this.props.onLikedClicked(id)
+  }
 
+  commentChangeHandler = (e) => {
+    this.setState({
+      comment:e.target.value,
+    });
+    this.props.commentChangeHandler(e);
+  }
 
+  onAddCommentClicked = (id) => {
+    if (this.state.comment === "" || typeof this.state.comment === undefined) {
+      return;
+    }
+    this.setState({
+      comment:""
+    });
+    this.props.onAddCommentClicked(id);
+  }
 }
 
 export default withStyles(styles)(Home);

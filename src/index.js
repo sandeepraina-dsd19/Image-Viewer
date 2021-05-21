@@ -1,8 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import Controller from './screens/Controller';
+import AppRouter from './router';
 
-
-ReactDOM.render(<Controller/>,document.getElementById('root')
+ReactDOM.render(
+  <AppRouter />,
+  document.getElementById('root')
 );
