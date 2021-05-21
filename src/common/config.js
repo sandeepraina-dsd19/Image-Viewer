@@ -5,7 +5,7 @@ var Config =
         "password": "admin"
     },
     "auth": {
-        "access-token": "IGQVJXMDA5aXg1LXRCYUhxaDZA5N1pyamlnQnd2T3hQUXV5TDZAwdnV1YnRvNEx3bmJ5RDVNaS03RkZAYZAzZAKRU5iYVE5MFRUb0FjYXBEMjFEVHZAsaEtoeThoTThHZAUozVTN6MmNyRjhQMTU3MElidE5YYWxsTlVhQTFtV2JZA"        
+        "access-token": "IGQVJVMU5zSVJWM0xTb0V6bGMyT3g5T0t1SlMwRnp2RXdDU0l6ZAF9nQ3ZAmOTJKOGlIWk5MUXlaYWhQYkwzcHd2QVE0eGJ5aTZAWOTZAOS3ZADVDllZAVBtb3ZAzNEo1UUV6M2lNTUlLejZAJZAVdwNG9aeHZACLVJPc1c5eUc0RnRr"        
     },
     "api": {
         mediaUrl: "https://graph.instagram.com/me/media?fields=id,caption",

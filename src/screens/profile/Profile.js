@@ -3,13 +3,14 @@ import './Profile.css';
 import Header from '../../common/header/Header';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
-import Icon from '@material-ui/core/Icon';
 import CardMedia from '@material-ui/core/CardMedia';
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
 import IconButton from '@material-ui/core/IconButton';
+import Fab from '@material-ui/core/Fab';
 import Modal from '@material-ui/core/Modal';
 import Typography from '@material-ui/core/Typography';
+import EditIcon from '@material-ui/icons/Edit';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
 import Input from '@material-ui/core/Input';
@@ -266,9 +267,9 @@ class Profile extends Component {
                             <div style={{float: "left", width: "200px", fontSize: "small"}}> Followed By: {this.state.followed_by}</div> <br />
                         </div>
                         <div style={{fontSize: "small"}}> {this.state.full_name}
-                            <Button mini variant="fab" color="secondary" aria-label="Edit" style={{marginLeft: "20px"}} onClick={this.handleOpenEditModal}>
-                            <Icon>edit_icon</Icon>
-                        </Button>
+                            <Fab size="small" color="secondary" aria-label="Edit" style={{marginLeft: "20px"}} onClick={this.handleOpenEditModal}>
+                            <EditIcon />
+                        </Fab>
                         </div>
                         <Modal
                             aria-labelledby="edit-modal"
