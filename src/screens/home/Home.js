@@ -109,8 +109,7 @@ class Home extends Component{
     );
   }
 
-  onSearchEntered = (value) =>{
-    console.log('search value', value);
+  onSearchEntered = (value) =>{    
     let filteredData = this.state.data;
     filteredData = filteredData.filter((data) =>{
       let string = data.caption.toLowerCase();
@@ -178,19 +177,16 @@ class Home extends Component{
 	//Calling first API
     return fetch(url,{
       method:'GET',
-    }).then((response) =>{
-        console.log(response);
+    }).then((response) =>{        
 		return response.json();
     }).then((jsonResponse) =>{
       const mediaArray = jsonResponse.data;
       const mediaInfo = []
-      //Calling second API with all the media Ids returned from First API call
-	  console.log(mediaArray);
+      //Calling second API with all the media Ids returned from First API call	 
     return  Promise.all(
           mediaArray.map(x => {
             return new Promise((resolve) => {
-              let url = `https://graph.instagram.com/${x.id}?fields=id,media_type,media_url,username,timestamp&access_token=${sessionStorage.getItem('access-token')}`;
-              console.log(url);
+              let url = `https://graph.instagram.com/${x.id}?fields=id,media_type,media_url,username,timestamp&access_token=${sessionStorage.getItem('access-token')}`;              
 			  fetch(url,{
                 method:'GET',
               })
@@ -311,7 +307,7 @@ class HomeItem extends Component{
             })}
             <div className={classes.formControl}>
               <FormControl style={{flexGrow:1}}>
-                <InputLabel htmlFor="comment">Add Comment</InputLabel>
+                <InputLabel htmlFor="comment">Add a comment</InputLabel>
                 <Input id="comment" value={this.state.comment} onChange={this.commentChangeHandler}/>
               </FormControl>
               <FormControl>
