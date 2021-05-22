@@ -244,7 +244,7 @@ class HomeItem extends Component{
 
   render(){
     const {classes, item, comments} = this.props;
-//timestamo conversion
+//timestamp conversion
     let createdTime = new Date(item.timestamp);
     let yyyy = createdTime.getFullYear();
     let mm = createdTime.getMonth() + 1 ;
