@@ -365,7 +365,7 @@ class Profile extends Component {
                                     </div>
                                     <div className="row">
                                         <FormControl style={{flexGrow:1}}>
-                                            <InputLabel htmlFor="comment">Add Comment</InputLabel>
+                                            <InputLabel htmlFor="comment">Add a comment</InputLabel>
                                             <Input  style={styles.comment} id="comment" value={this.state.currentComment} onChange={this.commentChangeHandler}/>
                                         </FormControl>
                                         <FormControl>
